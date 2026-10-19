@@ -31,12 +31,12 @@ The AdaIN checkpoint and the six reference paintings are included in `Python tes
 | Output folder | Reference painting |
 |---|---|
 | `Base Copy` | original CIFAR-10 images (no style) |
-| `abstract-Batch` | `abstract.jpeg` |
-| `cubism-Batch` | `cubism.jpg` |
-| `oil_painting-Batch` | `oil_painting.jpeg` |
-| `Post_Impression-Batch` | `starry_night.jpg` |
-| `sketch-Batch` | `sketch.jpeg` |
-| `watercolor-Batch` | `watercolor.jpg` |
+| `abstract-Batch` | <img width="250" height="316" alt="image" src="https://github.com/user-attachments/assets/3d8c32c5-4737-4841-83a9-991aecdba53e" />|
+| `cubism-Batch` | <img width="480" height="720" alt="image" src="https://github.com/user-attachments/assets/2d2eef68-cacf-4e93-bc2c-0c7ff3cfba57" />|
+| `oil_painting-Batch` | <img width="422" height="473" alt="image" src="https://github.com/user-attachments/assets/632b6470-9a20-4198-b159-4be2d8b396c7" />|
+| `Post_Impression-Batch` | <img width="970" height="768" alt="image" src="https://github.com/user-attachments/assets/e369d8bc-5d4d-4e6f-a1bf-181d0df340f2" />|
+| `sketch-Batch` | <img width="494" height="620" alt="image" src="https://github.com/user-attachments/assets/cb8e79d8-9b28-4831-9c35-b2e29c32ea8e" />|
+| `watercolor-Batch` | <img width="736" height="1041" alt="image" src="https://github.com/user-attachments/assets/e6cb4658-a115-41d1-801b-d84d262607c2" />|
 
 Each folder contains one subfolder per CIFAR-10 class, under `Python test/project/Images/`.
 
