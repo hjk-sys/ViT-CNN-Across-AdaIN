@@ -1,0 +1,15 @@
+model,condition,accuracy_%,degradation_pts
+resnet,baseline,92.57,0.0
+resnet,post_impression,63.47,29.1
+resnet,sketch,53.03,39.54
+resnet,watercolor,54.84,37.73
+resnet,cubism,49.07,43.5
+resnet,abstract,67.02,25.55
+resnet,oil_painting,73.29,19.28
+vit,baseline,98.47,0.0
+vit,post_impression,88.1,10.37
+vit,sketch,73.14,25.33
+vit,watercolor,82.6,15.87
+vit,cubism,78.81,19.66
+vit,abstract,86.99,11.48
+vit,oil_painting,88.8,9.67
