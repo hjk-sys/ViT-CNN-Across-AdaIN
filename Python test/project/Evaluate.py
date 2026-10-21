@@ -1,6 +1,77 @@
-import torch, time
+import torch, time, os, csv
+import numpy as np
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.datasets import ImageFolder
 
-def evaluation(model, device, loader):
+RESULTS_DIR = "project/results"
+CLASSES = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+
+# Every dataset the models are evaluated on (None = the original CIFAR-10 test set)
+DATASETS = {
+    "baseline": None,
+    "alpha0": "project/Images/alpha0-Batch",              # control: same AdaIN pipeline, alpha = 0 (no style)
+    "resize_only": "project/Images/resize_only-Batch",    # control: 32 -> 256 -> 32 resize only, no AdaIN
+    "oil_painting": "project/Images/oil_painting-Batch",
+    "abstract": "project/Images/abstract-Batch",
+    "post_impression": "project/Images/Post_Impression-Batch",
+    "watercolor": "project/Images/watercolor-Batch",
+    "sketch": "project/Images/sketch-Batch",
+    "cubism": "project/Images/cubism-Batch",
+    # Extra reference paintings, to check results aren't a quirk of one painting
+    "cubism_b": "project/Images/cubism_b-Batch",
+    "cubism_c": "project/Images/cubism_c-Batch",
+    "sketch_b": "project/Images/sketch_b-Batch",
+    "sketch_c": "project/Images/sketch_c-Batch",
+}
+
+
+def evaluate_all(model, device, model_name, transform):
+    """Runs evaluation() on every dataset that is fully generated and not saved yet.
+    To redo one, delete its file in project/results/."""
+    for name, folder in DATASETS.items():
+        save_as = f"{RESULTS_DIR}/{model_name}__{name}"
+        if os.path.exists(save_as + ".npz"):
+            print(f"skip {name}: already saved")
+            continue
+        if folder is None:
+            dataset = datasets.CIFAR10(root="project/Images", train=False, download=False, transform=transform)
+        elif not os.path.isdir(folder):
+            print(f"skip {name}: {folder} not generated yet")
+            continue
+        else:
+            dataset = ImageFolder(root=folder, transform=transform)
+            if len(dataset) != 10000:
+                # Generation still running or interrupted: never save a partial result
+                print(f"skip {name}: only {len(dataset)}/10000 images")
+                continue
+
+        print(f"\n----- {model_name} on {name} -----")
+        loader = DataLoader(dataset, batch_size=32, shuffle=False)
+        evaluation(model, device, loader, save_as)
+
+
+def save_results(save_as, dataset, labels, predictions, confusion_matrix, seconds, parameters):
+    """Saves everything results.py needs, so no number has to be copied from the terminal."""
+    os.makedirs(os.path.dirname(save_as), exist_ok=True)
+    labels, predictions = np.array(labels), np.array(predictions)
+    if isinstance(dataset, ImageFolder):
+        # Stylized images are saved as <CIFAR-10 test index>.png
+        image_ids = np.array([int(os.path.basename(path)[:-4]) for path, _ in dataset.samples])
+    else:
+        image_ids = np.arange(len(dataset))
+
+    np.savez(save_as + ".npz", predictions=predictions, labels=labels,
+             confusion=confusion_matrix.numpy().astype(np.int64), seconds=seconds, parameters=parameters)
+    with open(save_as + "_predictions.csv", "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["image", "true", "predicted"])
+        for image, true, predicted in sorted(zip(image_ids, labels, predictions)):
+            writer.writerow([image, CLASSES[true], CLASSES[predicted]])
+    print(f"Saved to {save_as}.npz and {save_as}_predictions.csv")
+
+
+def evaluation(model, device, loader, save_as=None):
     images, labels = next(iter(loader))
 
 
@@ -132,5 +203,9 @@ def evaluation(model, device, loader):
     print(f"Parameters: {round(parameters,2)}")
     print(f"Images/sec: {round(images_per_second,2)}")
     print(f"Evaluation time: {round((end_time1 - start_time1),2)} seconds")
+
+    if save_as is not None:
+        save_results(save_as, loader.dataset, all_labels, all_predictions, confusion_matrix,
+                     end_time1 - start_time1, parameters)
 
     return images, labels
