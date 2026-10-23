@@ -1,0 +1,9 @@
+Style,Painting,ResNet-50 accuracy (%),ResNet-50 attractors (ρ_c),ViT-B/16 accuracy (%),ViT-B/16 attractors (ρ_c)
+Cubism,Cubism A,49.07,"Airplane 2.25, Frog 2.16",78.81,Frog 1.83
+Cubism,Cubism B,58.51,"Truck 1.70, Airplane 1.59, Frog 1.57",84.89,None
+Cubism,Cubism C,51.23,"Airplane 2.64, Cat 1.85, Truck 1.58",83.84,None
+Cubism,Mean (range),52.94 (49.07–58.51),,82.51 (78.81–84.89),
+Sketch,Sketch A,53.03,Cat 3.74,73.14,Cat 2.34
+Sketch,Sketch B,60.25,Cat 3.07,74.61,"Cat 2.35, Dog 1.53"
+Sketch,Sketch C,59.50,Cat 3.30,74.35,Cat 2.37
+Sketch,Mean (range),57.59 (53.03–60.25),,74.03 (73.14–74.61),

@@ -1,0 +1,6 @@
+,ResNet-50,ViT-B/16
+Baseline accuracy (%),92.57,98.47
+"Control accuracy, α = 0 (%)",79.82,90.17
+Parameters,"24,562,250","85,806,346"
+"Inference time, 10,000 images (s)",35.57,80.66
+Images per second,281.1,124.0
