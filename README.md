@@ -1,5 +1,7 @@
 # ViT-CNN-Classifiers-Across-AdaIN
 
+From the paper: "From photographs to paintings: Evaluating computer vision architecture across artistic domains."
+
 Compares how a CNN (fine-tuned **ResNet-50**) and a Vision Transformer (**ViT-Base-16**) hold up when the same images are shown in different artistic styles.
 
 The test set is the 10,000 CIFAR-10 test images. Each image is also rendered in six painting styles using AdaIN style transfer, giving 7 versions of the test set (original + 6 styles) and 70,000 images in total. Both models are evaluated on every version.
