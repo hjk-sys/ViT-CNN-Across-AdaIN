@@ -90,7 +90,8 @@ project/
 
 ## Credits
 
-- ResNet-50 CIFAR-10 checkpoint: [AnjanSB/finetune-resnet-cifar10](https://huggingface.co/AnjanSB/finetune-resnet-cifar10) (MIT license)
-- ViT-Base-16 CIFAR-10 checkpoint: [Yurim0507/vit-base-16-cifar10-unlearning](https://huggingface.co/Yurim0507/vit-base-16-cifar10-unlearning) (MIT license)
+- ResNet-50 CIFAR-10 checkpoint: https://huggingface.co/AnjanSB/finetune-resnet-cifar10 (MIT License)
+- ViT-Base-16 CIFAR-10 checkpoint: https://huggingface.co/Yurim0507/vit-base-16-cifar10-unlearning (MIT License)
+- ViT-small-patch16 CIFAR-10 checkpoint: https://huggingface.co/MF21377197/vit-small-patch16-224-finetuned-Cifar10. (MIT License)
 - Style transfer: AdaIN (Huang and Belongie, 2017)
 - Dataset: CIFAR-10 (Krizhevsky, 2009)
