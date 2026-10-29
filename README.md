@@ -20,15 +20,15 @@ pip install -r requirements.txt
 
 ## 1. Build the dataset
 
-The images are not stored in this repo. One script downloads CIFAR-10 and generates every stylized version:
+The images are not stored in this repo. `protocol.py` generates any stylized version that's missing (see [PROTOCOL.md](project/PROTOCOL.md)). To make a single one, edit the `generate(...)` call at the bottom of `project/Style_Transfer/sample.py` and run:
 
 ```bash
-python "Python test/project/generate_dataset.py"
+python project/Style_Transfer/sample.py
 ```
 
-This runs 60,000 style transfers, so it takes a long time. It skips images that already exist, so you can stop it and resume later.
+This takes a long time per style. It skips images that already exist, so you can stop it and resume later.
 
-The AdaIN checkpoint and the six reference paintings are included in `Python test/project/Style_Transfer/`.
+The AdaIN checkpoint and the six reference paintings are included in `project/Style_Transfer/`.
 
 | Output folder | Reference painting |
 |---|---|
@@ -40,11 +40,11 @@ The AdaIN checkpoint and the six reference paintings are included in `Python tes
 | `sketch-Batch` | <img width="250" height="316" alt="image" src="https://github.com/user-attachments/assets/cb8e79d8-9b28-4831-9c35-b2e29c32ea8e" />|
 | `watercolor-Batch` | <img width="250" height="316" alt="image" src="https://github.com/user-attachments/assets/e6cb4658-a115-41d1-801b-d84d262607c2" />|
 
-Each folder contains one subfolder per CIFAR-10 class, under `Python test/project/Images/`.
+Each folder contains one subfolder per CIFAR-10 class, under `project/Images/`.
 
 ## 2. Trained models
 
-This project evaluates two existing CIFAR-10 checkpoints from Hugging Face. They are about 420 MB combined and are not included in this repo. Download these two files and place them in `Python test/project/models/`:
+This project evaluates two existing CIFAR-10 checkpoints from Hugging Face. They are about 420 MB combined and are not included in this repo. Download these two files and place them in `project/models/`:
 
 | File | Model | Source |
 |---|---|---|
@@ -55,42 +55,35 @@ The ViT repository contains 11 checkpoints. Only the `original` one (trained on 
 
 ## 3. Run the experiments
 
-The scripts use paths relative to the `Python test` folder, so run them from there:
+The scripts use paths relative to the repo root, so run them from there:
 
 ```bash
-cd "Python test"
 python project/ResnetInput.py   # evaluate ResNet-50
 python project/ViTInput.py      # evaluate ViT-Base-16
+python project/results.py       # tables and figures from the saved results
 ```
 
-Both scripts evaluate one version of the test set per run, and it is chosen inside the script. Each script has one `ImageFolder(...)` block per dataset. The oil painting block is active by default. To evaluate a different version, comment out the active block and uncomment the one you want.
+Each input script evaluates every dataset listed in `DATASETS` in `Evaluate.py` that is fully generated and not saved yet. Results go to `project/results/`; delete a file there to redo that dataset.
 
-To evaluate the original images, point the `root` at `project/Images/Base Copy` instead:
-
-```python
-dataset = ImageFolder(
-    root="project/Images/Base Copy",
-    transform=transform
-)
-```
-
-Available dataset folders: `Base Copy`, `abstract-Batch`, `cubism-Batch`, `oil_painting-Batch`, `Post_Impression-Batch`, `sketch-Batch`, `watercolor-Batch`.
+For the full control-corrected protocol, see [PROTOCOL.md](project/PROTOCOL.md).
 
 The scripts use an Apple Silicon GPU (MPS) when one is available and fall back to the CPU otherwise.
 
 ## Repository layout
 
 ```
-Python test/project/
-├── generate_dataset.py   # builds the 70,000-image dataset
+project/
+├── protocol.py           # control-corrected protocol for one model
+├── results.py            # tables and figures for the paper
 ├── Evaluate.py           # accuracy, confusion matrix, precision/recall/F1, speed
 ├── Resnet.py             # ResNet-50 fine-tuning model
 ├── ResnetInput.py        # runs ResNet-50 on the datasets
 ├── ViTModel.py           # ViT-Base-16 model loading
 ├── ViTInput.py           # runs ViT-Base-16 on the datasets
 ├── baseline.py           # dataset loading / sanity checks
-├── Style_Transfer/       # AdaIN code, checkpoint, and style paintings
+├── Style_Transfer/       # AdaIN code, checkpoint, style paintings, sample.py
 ├── figures/              # figures
+├── results/              # saved results, tables and figures
 ├── models/               # trained weights (not in the repo)
 └── Images/               # generated dataset (not in the repo)
 ```

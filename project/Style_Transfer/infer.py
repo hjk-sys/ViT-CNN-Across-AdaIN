@@ -6,7 +6,7 @@ from skimage.transform import resize
 from PIL import Image
 from torchvision.transforms.transforms import Resize
 
-from Style_Transfer.utils import resolve_device, inv_normz
+from utils import resolve_device, inv_normz
 from logger import log
 
 from model import StyleNet
