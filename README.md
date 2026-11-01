@@ -1,6 +1,6 @@
 # ViT-CNN-Classifiers-Across-AdaIN
 
-From the paper: "From photographs to paintings: Evaluating computer vision architecture across artistic domains."
+From the paper: "[From photographs to paintings: Evaluating computer vision architecture across artistic domains.](url)"
 
 Compares how a CNN (fine-tuned **ResNet-50**) and a Vision Transformer (**ViT-Base-16**) hold up when the same images are shown in different artistic styles.
 
