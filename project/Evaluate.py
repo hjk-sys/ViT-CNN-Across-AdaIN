@@ -76,8 +76,6 @@ def evaluate_all(model, device, model_name, transform):
 
 def evaluation(model, device, loader, save_as):
     images, labels = next(iter(loader))
-
-
     corrects = 0
     totals = 0
     class_correct = {
@@ -104,8 +102,6 @@ def evaluation(model, device, loader, save_as):
         8:0,
         9:0
     }
-
-
     all_predictions = []
     all_labels = []
     confusion_matrix = torch.zeros(10,10)
@@ -124,10 +120,8 @@ def evaluation(model, device, loader, save_as):
 
         _, predictions = torch.max(outputs, 1)
 
-
         all_predictions.extend(predictions.cpu().numpy())
         all_labels.extend(labels.cpu().numpy())
-
 
         for prediction, label in zip(predictions, labels):
             confusion_matrix[label][prediction] += 1
@@ -135,24 +129,14 @@ def evaluation(model, device, loader, save_as):
             if prediction == label:
                 class_correct[label.item()] += 1
 
-
-
-
         correct = (predictions == labels).sum().item()
-
 
         corrects += correct
         totals += labels.size(0)
-
-
+        
     end_time1 = time.perf_counter()
-
-
-
-
     accuracy = corrects / totals
     print(f"On the testing data, the model acchieved {accuracy * 100}% accuracy!")
-
     classes = [
         "Airplane",
         "Automobile",
@@ -195,13 +179,9 @@ def evaluation(model, device, loader, save_as):
 
 
         print(f"{classes[i]}: P = {round(precision.item()*100,2)}%, R = {round(recall.item()*100,2)}%, F1 = {round(F1_score.item()*100,2)}%")
-
-
-
-
+        
     images_per_second = totals / (end_time1 - start_time1)
     parameters = sum(p.numel() for p in model.parameters())
-
 
     print(f"Parameters: {round(parameters,2)}")
     print(f"Images/sec: {round(images_per_second,2)}")
@@ -217,7 +197,6 @@ def evaluation(model, device, loader, save_as):
         seconds=end_time1 - start_time1,
         parameters=parameters
     )
-
     # Stylized images are saved as <CIFAR-10 test number>.png
     image_ids = []
     if isinstance(loader.dataset, ImageFolder):
