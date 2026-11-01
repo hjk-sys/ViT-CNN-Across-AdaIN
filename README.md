@@ -1,4 +1,4 @@
-# ViT-CNN-Classifiers-Across-AdaIN
+# ViT-CNN-Across-AdaIN
 
 From the paper: "[From photographs to paintings: Evaluating computer vision architecture across artistic domains.](url)"
 
