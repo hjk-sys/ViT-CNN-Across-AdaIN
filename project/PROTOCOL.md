@@ -71,7 +71,6 @@ The model must output 10 class scores in CIFAR-10 order (airplane, automobile, b
 ViT-Small (`vit_small`, 21.7M parameters, close to ResNet-50's 24.6M) was added this way as a size-matched comparison. Its clean baseline is 98.48% with its own preprocessing (resize to 224, mean = std = 0.5).
 
 ## Example output (from the paper)
-
 | Condition | ResNet-50 acc. (%) | Points lost | ViT-B/16 acc. (%) | Points lost |
 |---|---|---|---|---|
 | Baseline | 92.57 | | 98.47 | |
