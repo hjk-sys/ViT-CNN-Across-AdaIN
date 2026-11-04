@@ -27,4 +27,4 @@ print("ViT_base_16 Model Successfully Loaded!")
 print(f"Model Loading Time: {round((end_time - start_time),2)} seconds")
 
 # Evaluates every dataset listed in Evaluate.py that isn't saved yet
-evaluate_all(model, device, "vit", transform)
+evaluate_all(model, device, "vit_small",transform)

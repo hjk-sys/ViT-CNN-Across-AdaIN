@@ -4,11 +4,11 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.datasets import ImageFolder
 
-results_dir = "project/results"
-classes = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+RESULTS_DIR = "project/results"
+CLASSES = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
 
 # Every dataset the models are evaluated on (None = the original CIFAR-10 test set)
-datasets = {
+DATASETS = {
     "baseline": None,
     "alpha0": "project/Images/alpha0-Batch",              # control: AdaIN with alpha = 0 (no style)
     "resize_only": "project/Images/resize_only-Batch",    # control: 32 -> 256 -> 32 resize only
@@ -26,12 +26,12 @@ datasets = {
 }
 
 # Attractor = predicted at least 1.5x as often as expected, and 0.25 more than under the alpha = 0 control
-attractor = 1.5
-control_margin = 0.25
+ATTRACTOR = 1.5
+CONTROL_MARGIN = 0.25
 
 
 def load(model_name, condition):
-    return np.load(f"{results_dir}/{model_name}__{condition}.npz")["confusion"]
+    return np.load(f"{RESULTS_DIR}/{model_name}__{condition}.npz")["confusion"]
 
 
 # Predicted count / expected count for each class
@@ -42,13 +42,13 @@ def rho(model_name, condition):
 
 def attractors(model_name, condition):
     rho_values = rho(model_name, condition)
-    return (rho_values >= attractor) & (rho_values - rho(model_name, "alpha0") >= control_margin)
+    return (rho_values >= ATTRACTOR) & (rho_values - rho(model_name, "alpha0") >= CONTROL_MARGIN)
 
 
 # Evaluates every dataset that's finished and not saved yet (delete its file in project/results/ to redo one)
 def evaluate_all(model, device, model_name, transform):
-    for name, folder in datasets.items():
-        save_as = f"{results_dir}/{model_name}__{name}"
+    for name, folder in DATASETS.items():
+        save_as = f"{RESULTS_DIR}/{model_name}__{name}"
         if os.path.exists(save_as + ".npz"):
             print(f"skip {name}: already saved")
             continue
@@ -76,6 +76,8 @@ def evaluate_all(model, device, model_name, transform):
 
 def evaluation(model, device, loader, save_as):
     images, labels = next(iter(loader))
+
+
     corrects = 0
     totals = 0
     class_correct = {
@@ -102,6 +104,8 @@ def evaluation(model, device, loader, save_as):
         8:0,
         9:0
     }
+
+
     all_predictions = []
     all_labels = []
     confusion_matrix = torch.zeros(10,10)
@@ -120,8 +124,10 @@ def evaluation(model, device, loader, save_as):
 
         _, predictions = torch.max(outputs, 1)
 
+
         all_predictions.extend(predictions.cpu().numpy())
         all_labels.extend(labels.cpu().numpy())
+
 
         for prediction, label in zip(predictions, labels):
             confusion_matrix[label][prediction] += 1
@@ -129,14 +135,24 @@ def evaluation(model, device, loader, save_as):
             if prediction == label:
                 class_correct[label.item()] += 1
 
+
+
+
         correct = (predictions == labels).sum().item()
+
 
         corrects += correct
         totals += labels.size(0)
-        
+
+
     end_time1 = time.perf_counter()
+
+
+
+
     accuracy = corrects / totals
     print(f"On the testing data, the model acchieved {accuracy * 100}% accuracy!")
+
     classes = [
         "Airplane",
         "Automobile",
@@ -179,9 +195,13 @@ def evaluation(model, device, loader, save_as):
 
 
         print(f"{classes[i]}: P = {round(precision.item()*100,2)}%, R = {round(recall.item()*100,2)}%, F1 = {round(F1_score.item()*100,2)}%")
-        
+
+
+
+
     images_per_second = totals / (end_time1 - start_time1)
     parameters = sum(p.numel() for p in model.parameters())
+
 
     print(f"Parameters: {round(parameters,2)}")
     print(f"Images/sec: {round(images_per_second,2)}")
@@ -197,6 +217,7 @@ def evaluation(model, device, loader, save_as):
         seconds=end_time1 - start_time1,
         parameters=parameters
     )
+
     # Stylized images are saved as <CIFAR-10 test number>.png
     image_ids = []
     if isinstance(loader.dataset, ImageFolder):
@@ -210,7 +231,7 @@ def evaluation(model, device, loader, save_as):
         writer = csv.writer(f)
         writer.writerow(["image", "true", "predicted"])
         for image, true, predicted in rows:
-            writer.writerow([image, classes[true], classes[predicted]])
+            writer.writerow([image, CLASSES[true], CLASSES[predicted]])
     print(f"Saved to {save_as}.npz and {save_as}_predictions.csv")
 
     return images, labels

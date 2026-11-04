@@ -1,0 +1,11 @@
+Condition,Accuracy (%),Points lost,Effect
+baseline,92.57,,
+resize_only,88.95,3.62,resizing (baseline - resize only)
+alpha0,79.82,9.13,reconstruction (resize only - alpha 0)
+oil_painting,73.29,6.53,style (alpha 0 - style)
+abstract,67.02,12.80,style (alpha 0 - style)
+post_impression,63.47,16.35,style (alpha 0 - style)
+watercolor,54.84,24.98,style (alpha 0 - style)
+sketch,53.03,26.79,style (alpha 0 - style)
+cubism,49.07,30.75,style (alpha 0 - style)
+mean style,,19.70,style

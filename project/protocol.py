@@ -18,7 +18,7 @@ from ViTModel import load_model
 from transformers import ViTForImageClassification
 
 # (style image, alpha, resize only)
-conditions = {
+CONDITIONS = {
     "resize_only": ("cubism.jpg", 1.0, True),
     "alpha0": ("cubism.jpg", 0.0, False),
     "oil_painting": ("oil_painting.jpeg", 1.0, False),
@@ -28,10 +28,10 @@ conditions = {
     "sketch": ("sketch.jpeg", 1.0, False),
     "cubism": ("cubism.jpg", 1.0, False),
 }
-styles = ["oil_painting", "abstract", "post_impression", "watercolor", "sketch", "cubism"]
+STYLES = ["oil_painting", "abstract", "post_impression", "watercolor", "sketch", "cubism"]
 
 
-""" models """
+""" Models """
 
 def load_resnet(device):
     model = ResNet50FineTune(num_classes=10)
@@ -84,19 +84,19 @@ vit_small_transform = transforms.Compose([
     )
 ])
 
-models = {
+MODELS = {
     "resnet": (load_resnet, imagenet_transform),
     "vit": (load_vit, imagenet_transform),
     "vit_small": (load_vit_small, vit_small_transform)
 }
 
 name = sys.argv[1] if len(sys.argv) > 1 else "resnet"
-if name not in models:
-    sys.exit(f"Unknown model '{name}'. Choose from: {', '.join(models)}")
+if name not in MODELS:
+    sys.exit(f"Unknown model '{name}'. Choose from: {', '.join(MODELS)}")
 
 
 """ Generate datasets """
-for condition, (style, alpha, resize_only) in conditions.items():
+for condition, (style, alpha, resize_only) in CONDITIONS.items():
     folder = DATASETS[condition]
     if len(glob.glob(f"{folder}/*/*.png")) == 10000:
         continue
@@ -111,7 +111,7 @@ if torch.backends.mps.is_available():
 else:
     device = torch.device("cpu")
 
-loader, transform = models[name]
+loader, transform = MODELS[name]
 model = loader(device)
 evaluate_all(model, device, name, transform)
 
@@ -131,7 +131,7 @@ rows.append(["resize_only", f"{resized:.2f}", f"{baseline - resized:.2f}", "resi
 rows.append(["alpha0", f"{control:.2f}", f"{resized - control:.2f}", "reconstruction (resize only - alpha 0)"])
 
 style_effects = []
-for style in styles:
+for style in STYLES:
     style_accuracy = accuracy(style)
     effect = control - style_accuracy
     style_effects.append(effect)
@@ -148,7 +148,7 @@ print(f"Saved {path}")
 
 
 """ Rho heatmap """
-rows = ["baseline", "resize_only", "alpha0"] + styles
+rows = ["baseline", "resize_only", "alpha0"] + STYLES
 grid = np.array([rho(name, row) for row in rows])
 control = grid[2]
 
@@ -160,7 +160,7 @@ for i in range(len(rows)):
     found = attractors(name, rows[i])
     for j in range(10):
         value = grid[i, j]
-        attractor = rows[i] in styles and found[j]
+        attractor = rows[i] in STYLES and found[j]
         ax.text(j, i, f"{value:.2f}", ha="center", va="center", fontsize=6.5,
                 fontweight="bold" if attractor else "normal")
         if attractor:
