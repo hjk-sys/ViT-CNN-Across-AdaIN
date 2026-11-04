@@ -4,11 +4,11 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.datasets import ImageFolder
 
-RESULTS_DIR = "project/results"
-CLASSES = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
+results_dir = "project/results"
+classes = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
 
 # Every dataset the models are evaluated on (None = the original CIFAR-10 test set)
-DATASETS = {
+dataset_folders = {
     "baseline": None,
     "alpha0": "project/Images/alpha0-Batch",              # control: AdaIN with alpha = 0 (no style)
     "resize_only": "project/Images/resize_only-Batch",    # control: 32 -> 256 -> 32 resize only
@@ -26,12 +26,12 @@ DATASETS = {
 }
 
 # Attractor = predicted at least 1.5x as often as expected, and 0.25 more than under the alpha = 0 control
-ATTRACTOR = 1.5
-CONTROL_MARGIN = 0.25
+attractor_rho = 1.5
+control_margin = 0.25
 
 
 def load(model_name, condition):
-    return np.load(f"{RESULTS_DIR}/{model_name}__{condition}.npz")["confusion"]
+    return np.load(f"{results_dir}/{model_name}__{condition}.npz")["confusion"]
 
 
 # Predicted count / expected count for each class
@@ -42,13 +42,13 @@ def rho(model_name, condition):
 
 def attractors(model_name, condition):
     rho_values = rho(model_name, condition)
-    return (rho_values >= ATTRACTOR) & (rho_values - rho(model_name, "alpha0") >= CONTROL_MARGIN)
+    return (rho_values >= attractor_rho) & (rho_values - rho(model_name, "alpha0") >= control_margin)
 
 
 # Evaluates every dataset that's finished and not saved yet (delete its file in project/results/ to redo one)
 def evaluate_all(model, device, model_name, transform):
-    for name, folder in DATASETS.items():
-        save_as = f"{RESULTS_DIR}/{model_name}__{name}"
+    for name, folder in dataset_folders.items():
+        save_as = f"{results_dir}/{model_name}__{name}"
         if os.path.exists(save_as + ".npz"):
             print(f"skip {name}: already saved")
             continue
@@ -153,7 +153,7 @@ def evaluation(model, device, loader, save_as):
     accuracy = corrects / totals
     print(f"On the testing data, the model acchieved {accuracy * 100}% accuracy!")
 
-    classes = [
+    class_names = [
         "Airplane",
         "Automobile",
         "Bird",
@@ -166,35 +166,35 @@ def evaluation(model, device, loader, save_as):
         "Truck"
     ]
 
-    for i in range(len(classes)):
+    for i in range(len(class_names)):
         accuracy = class_correct[i]/class_total[i] * 100
-        print(f"{classes[i]}:, {round(accuracy,2)}%")
+        print(f"{class_names[i]}:, {round(accuracy,2)}%")
 
 
     print(confusion_matrix)
 
 
-    for i in range(len(classes)):
+    for i in range(len(class_names)):
 
 
-        TP = confusion_matrix[i][i]
+        tp = confusion_matrix[i][i]
 
 
-        FN = confusion_matrix[i].sum() - TP
+        fn = confusion_matrix[i].sum() - tp
 
 
-        FP = confusion_matrix[:, i].sum() - TP
+        fp = confusion_matrix[:, i].sum() - tp
 
 
-        TN = confusion_matrix.sum() - TP - FP - FN
+        tn = confusion_matrix.sum() - tp - fp - fn
 
 
-        precision = (TP/(TP+FP))
-        recall = (TP/(TP+FN))
-        F1_score = (2*((precision*recall)/(precision+recall)))
+        precision = (tp/(tp+fp))
+        recall = (tp/(tp+fn))
+        f1_score = (2*((precision*recall)/(precision+recall)))
 
 
-        print(f"{classes[i]}: P = {round(precision.item()*100,2)}%, R = {round(recall.item()*100,2)}%, F1 = {round(F1_score.item()*100,2)}%")
+        print(f"{class_names[i]}: P = {round(precision.item()*100,2)}%, R = {round(recall.item()*100,2)}%, F1 = {round(f1_score.item()*100,2)}%")
 
 
 
@@ -231,7 +231,7 @@ def evaluation(model, device, loader, save_as):
         writer = csv.writer(f)
         writer.writerow(["image", "true", "predicted"])
         for image, true, predicted in rows:
-            writer.writerow([image, CLASSES[true], CLASSES[predicted]])
+            writer.writerow([image, classes[true], classes[predicted]])
     print(f"Saved to {save_as}.npz and {save_as}_predictions.csv")
 
     return images, labels

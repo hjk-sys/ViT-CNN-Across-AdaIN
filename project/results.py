@@ -11,19 +11,19 @@ from matplotlib.patches import Rectangle
 from PIL import Image
 from torchvision.datasets import CIFAR10
 
-from Evaluate import load, rho, attractors, CLASSES, DATASETS, RESULTS_DIR
+from Evaluate import load, rho, attractors, classes, dataset_folders, results_dir
 
-MODELS = {"resnet": "ResNet-50", "vit": "ViT-B/16"}
+models = {"resnet": "ResNet-50", "vit": "ViT-B/16"}
 
 # Order of the conditions in every figure
-ORDER = ["baseline", "alpha0", "oil_painting", "abstract", "post_impression", "watercolor", "sketch", "cubism"]
+order = ["baseline", "alpha0", "oil_painting", "abstract", "post_impression", "watercolor", "sketch", "cubism"]
 
 # The first painting of each style is the original
-PAINTINGS = {
+paintings = {
     "cubism": ["cubism", "cubism_b", "cubism_c"],
     "sketch": ["sketch", "sketch_b", "sketch_c"]
 }
-PAINTING_NAMES = {
+painting_names = {
     "cubism": "Cubism A",
     "cubism_b": "Cubism B",
     "cubism_c": "Cubism C",
@@ -31,7 +31,7 @@ PAINTING_NAMES = {
     "sketch_b": "Sketch B",
     "sketch_c": "Sketch C"
 }
-PAINTING_TITLES = {
+painting_titles = {
     "cubism": "The Weeping Woman",
     "cubism_b": "Table by a Window",
     "cubism_c": "Guitar and Mandolin",
@@ -40,8 +40,8 @@ PAINTING_TITLES = {
     "sketch_c": "Peaceful Slumber Portrait"
 }
 
-FIGURES_DIR = f"{RESULTS_DIR}/figures"
-TABLES_DIR = f"{RESULTS_DIR}/tables"
+figures_dir = f"{results_dir}/figures"
+tables_dir = f"{results_dir}/tables"
 
 
 def fmt(value, digits):
@@ -75,14 +75,14 @@ def write_csv(path, rows):
 
 def make_csvs():
     summary = [["model", "condition", "accuracy_%", "degradation_pts", "drop_from_alpha0_pts"]]
-    classes = [["model", "condition", "class", "predicted", "rho", "precision_%", "recall_%", "f1_%"]]
+    class_rows = [["model", "condition", "class", "predicted", "rho", "precision_%", "recall_%", "f1_%"]]
 
-    for model in MODELS:
+    for model in models:
         baseline = accuracy(load(model, "baseline"))
         control = accuracy(load(model, "alpha0"))
 
-        for condition in DATASETS:
-            if not os.path.exists(f"{RESULTS_DIR}/{model}__{condition}.npz"):
+        for condition in dataset_folders:
+            if not os.path.exists(f"{results_dir}/{model}__{condition}.npz"):
                 continue
             confusion = load(model, condition)
             acc = accuracy(confusion)
@@ -96,10 +96,10 @@ def make_csvs():
 
             precision, recall, f1, predicted, rho = per_class(confusion)
             for k in range(10):
-                classes.append([
+                class_rows.append([
                     model,
                     condition,
-                    CLASSES[k],
+                    classes[k],
                     int(predicted[k]),
                     round(rho[k], 3),
                     round(precision[k] * 100, 1),
@@ -107,16 +107,16 @@ def make_csvs():
                     round(f1[k] * 100, 1)
                 ])
 
-    write_csv(f"{RESULTS_DIR}/summary.csv", summary)
-    write_csv(f"{RESULTS_DIR}/per_class.csv", classes)
+    write_csv(f"{results_dir}/summary.csv", summary)
+    write_csv(f"{results_dir}/per_class.csv", class_rows)
 
 
 def make_tables():
-    os.makedirs(TABLES_DIR, exist_ok=True)
+    os.makedirs(tables_dir, exist_ok=True)
 
     # Table 1: baseline, controls, size and speed
-    resnet = np.load(f"{RESULTS_DIR}/resnet__baseline.npz")
-    vit = np.load(f"{RESULTS_DIR}/vit__baseline.npz")
+    resnet = np.load(f"{results_dir}/resnet__baseline.npz")
+    vit = np.load(f"{results_dir}/vit__baseline.npz")
     resnet_seconds = float(resnet["seconds"])
     vit_seconds = float(vit["seconds"])
 
@@ -133,17 +133,17 @@ def make_tables():
     table1.append(["Parameters", f"{int(resnet['parameters']):,}", f"{int(vit['parameters']):,}"])
     table1.append(["Inference time, 10,000 images (s)", fmt(resnet_seconds, 2), fmt(vit_seconds, 2)])
     table1.append(["Images per second", fmt(10000 / resnet_seconds, 1), fmt(10000 / vit_seconds, 1)])
-    write_csv(f"{TABLES_DIR}/table1_baseline_control.csv", table1)
+    write_csv(f"{tables_dir}/table1_baseline_control.csv", table1)
 
     # Table 2: accuracy and attractors for every cubism and sketch painting
     table2 = [["Style", "Painting", "Title", "ResNet-50 accuracy (%)", "ResNet-50 attractors (ρ_c)",
                "ViT-B/16 accuracy (%)", "ViT-B/16 attractors (ρ_c)"]]
-    for style in PAINTINGS:
+    for style in paintings:
         accuracies = {"resnet": [], "vit": []}
 
-        for painting in PAINTINGS[style]:
-            row = [style.capitalize(), PAINTING_NAMES[painting], PAINTING_TITLES[painting]]
-            for model in MODELS:
+        for painting in paintings[style]:
+            row = [style.capitalize(), painting_names[painting], painting_titles[painting]]
+            for model in models:
                 confusion = load(model, painting)
                 precision, recall, f1, predicted, rho_values = per_class(confusion)
                 painting_accuracy = accuracy(confusion) * 100
@@ -154,7 +154,7 @@ def make_tables():
                 listed = []
                 for k in np.argsort(-rho_values):
                     if is_attractor[k]:
-                        listed.append(f"{CLASSES[k].capitalize()} {fmt(rho_values[k], 2)}")
+                        listed.append(f"{classes[k].capitalize()} {fmt(rho_values[k], 2)}")
                 if len(listed) == 0:
                     listed = ["None"]
 
@@ -163,16 +163,16 @@ def make_tables():
             table2.append(row)
 
         row = [style.capitalize(), "Mean (range)", ""]
-        for model in MODELS:
+        for model in models:
             a = accuracies[model]
             row.append(f"{fmt(np.mean(a), 2)} ({fmt(min(a), 2)}–{fmt(max(a), 2)})")
             row.append("")
         table2.append(row)
-    write_csv(f"{TABLES_DIR}/table2_robustness.csv", table2)
+    write_csv(f"{tables_dir}/table2_robustness.csv", table2)
 
 
 def print_discussion_numbers():
-    styles = ORDER[2:]
+    styles = order[2:]
     extra_paintings = ["cubism_b", "cubism_c", "sketch_b", "sketch_c"]
 
     # Sketch and cubism use the mean of their three paintings, like Table 2 in the paper
@@ -185,11 +185,11 @@ def print_discussion_numbers():
 
         style_effects = []
         for style in styles:
-            if style in PAINTINGS:
-                paintings = PAINTINGS[style]
+            if style in paintings:
+                style_paintings = paintings[style]
             else:
-                paintings = [style]
-            style_accuracy = np.mean([accuracy(load(model, p)) * 100 for p in paintings])
+                style_paintings = [style]
+            style_accuracy = np.mean([accuracy(load(model, p)) * 100 for p in style_paintings])
             style_effects.append(control - style_accuracy)
 
         pipeline = baseline - control
@@ -205,7 +205,7 @@ def print_discussion_numbers():
         shared = []
         for k in range(10):
             if resnet[k] and vit[k]:
-                shared.append(CLASSES[k])
+                shared.append(classes[k])
         if len(shared) == 0:
             shared = ["-"]
 
@@ -213,28 +213,28 @@ def print_discussion_numbers():
         print(f"  {condition:16s} r = {r:+.2f}   shared: {', '.join(shared)}")
 
     print("\nShip -> airplane and dog -> frog (% of the true class)")
-    for condition in ["baseline", "resize_only"] + ORDER[1:] + extra_paintings:
+    for condition in ["baseline", "resize_only"] + order[1:] + extra_paintings:
         line = f"  {condition:16s}"
-        for model in MODELS:
+        for model in models:
             confusion = load(model, condition)
             ship = confusion[8, 0] / confusion[8].sum() * 100   # ship -> airplane
             dog = confusion[5, 6] / confusion[5].sum() * 100    # dog -> frog
-            line += f"   {MODELS[model]} {ship:5.1f} {dog:5.1f}"
+            line += f"   {models[model]} {ship:5.1f} {dog:5.1f}"
         print(line)
 
 
 """ Part 2: figures """
 
-# Numbers from the Part 1 output, columns in ORDER unless it says otherwise
-ACCURACY = {   # overall accuracy (%)
+# Numbers from the Part 1 output, columns in order unless it says otherwise
+overall_accuracy = {   # overall accuracy (%)
     "resnet": [92.57, 79.82, 73.29, 67.02, 63.47, 54.84, 53.03, 49.07],
     "vit": [98.47, 90.17, 88.80, 86.99, 88.10, 82.60, 73.14, 78.81],
 }
-EXTRA_PAINTING_ACCURACY = {   # paintings B and C (%), the dots on the sketch and cubism bars
+extra_painting_accuracy = {   # paintings B and C (%), the dots on the sketch and cubism bars
     "resnet": {"sketch": [60.25, 59.50], "cubism": [58.51, 51.23]},
     "vit": {"sketch": [74.61, 74.35], "cubism": [84.89, 83.84]},
 }
-PER_CLASS_ACCURACY = {   # recall (%), one row per class
+per_class_accuracy = {   # recall (%), one row per class
     "resnet": [
         [ 92.2,  87.1,  69.3,  78.1,  82.9,  90.0,  28.8,  77.6],   # airplane
         [ 96.8,  87.6,  84.1,  81.6,  77.4,  78.5,  63.3,  76.6],   # automobile
@@ -260,7 +260,7 @@ PER_CLASS_ACCURACY = {   # recall (%), one row per class
         [ 98.0,  94.0,  93.9,  92.5,  94.1,  83.4,  79.5,  89.1],   # truck
     ],
 }
-RHO = {   # rho per class (columns = CLASSES), rows in ORDER
+rho_table = {   # rho per class (columns = classes), rows in order
     "resnet": [
         [0.98, 1.02, 0.94, 0.96, 1.07, 0.92, 1.12, 0.96, 1.03, 1.00],   # baseline
         [1.18, 0.95, 0.80, 1.48, 1.01, 1.05, 0.80, 0.92, 0.83, 0.99],   # alpha0
@@ -282,7 +282,7 @@ RHO = {   # rho per class (columns = CLASSES), rows in ORDER
         [1.01, 0.93, 1.23, 0.97, 0.92, 0.74, 1.83, 0.78, 0.63, 0.97],   # cubism
     ],
 }
-EXTRA_PAINTING_RHO = {   # rho per class for paintings B and C
+extra_painting_rho = {   # rho per class for paintings B and C
     "resnet": {
         "cubism_b": [1.59, 0.95, 0.83, 1.13, 0.28, 0.55, 1.57, 1.13, 0.28, 1.70],
         "cubism_c": [2.64, 0.91, 0.39, 1.85, 0.10, 0.51, 0.51, 1.28, 0.24, 1.58],
@@ -296,7 +296,7 @@ EXTRA_PAINTING_RHO = {   # rho per class for paintings B and C
         "sketch_c": [0.89, 0.88, 0.80, 2.37, 0.58, 1.49, 0.49, 0.80, 0.86, 0.84],
     },
 }
-CUBISM_CONFUSION = {   # % of each true class (rows) predicted as each class (columns), cubism A
+cubism_confusion = {   # % of each true class (rows) predicted as each class (columns), cubism A
     "resnet": [
         [77.6,  4.4,  2.9,  1.7,  0.2,  0.0, 10.1,  0.1,  1.9,  1.1],   # airplane
         [ 9.6, 76.6,  1.2,  1.7,  0.0,  0.1,  4.3,  0.0,  0.3,  6.2],   # automobile
@@ -324,38 +324,38 @@ CUBISM_CONFUSION = {   # % of each true class (rows) predicted as each class (co
 }
 
 # Points lost for Fig. 3: pipeline (baseline - control) first, then the style effect (control - style)
-EFFECTS = {}
-EXTRA_PAINTING_EFFECTS = {}
-for model in MODELS:
-    a = ACCURACY[model]
+effects = {}
+extra_painting_effects = {}
+for model in models:
+    a = overall_accuracy[model]
     control = a[1]
 
-    EFFECTS[model] = [round(a[0] - control, 2)]
-    for i in range(2, len(ORDER)):
-        EFFECTS[model].append(round(control - a[i], 2))
+    effects[model] = [round(a[0] - control, 2)]
+    for i in range(2, len(order)):
+        effects[model].append(round(control - a[i], 2))
 
-    EXTRA_PAINTING_EFFECTS[model] = {}
-    for style in EXTRA_PAINTING_ACCURACY[model]:
-        effects = []
-        for painting_accuracy in EXTRA_PAINTING_ACCURACY[model][style]:
-            effects.append(round(control - painting_accuracy, 2))
-        EXTRA_PAINTING_EFFECTS[model][style] = effects
+    extra_painting_effects[model] = {}
+    for style in extra_painting_accuracy[model]:
+        painting_effects = []
+        for painting_accuracy in extra_painting_accuracy[model][style]:
+            painting_effects.append(round(control - painting_accuracy, 2))
+        extra_painting_effects[model][style] = painting_effects
 
 # Rows of Fig. 7
-PAINTING_ROWS = ["alpha0", "cubism", "cubism_b", "cubism_c", "sketch", "sketch_b", "sketch_c"]
-PAINTING_RHO = {}
-for model in MODELS:
-    PAINTING_RHO[model] = []
-    for condition in PAINTING_ROWS:
-        if condition in ORDER:
-            PAINTING_RHO[model].append(RHO[model][ORDER.index(condition)])
+painting_rows = ["alpha0", "cubism", "cubism_b", "cubism_c", "sketch", "sketch_b", "sketch_c"]
+painting_rho = {}
+for model in models:
+    painting_rho[model] = []
+    for condition in painting_rows:
+        if condition in order:
+            painting_rho[model].append(rho_table[model][order.index(condition)])
         else:
-            PAINTING_RHO[model].append(EXTRA_PAINTING_RHO[model][condition])
+            painting_rho[model].append(extra_painting_rho[model][condition])
 
-HIGHLIGHTED_ERRORS = [("ship", "airplane"), ("dog", "frog")]   # (true, predicted), outlined in Fig. 6
+highlighted_errors = [("ship", "airplane"), ("dog", "frog")]   # (true, predicted), outlined in Fig. 6
 
 # Labels
-NAMES = {
+names = {
     "baseline": "Baseline",
     "alpha0": "Control (α = 0)",
     "oil_painting": "Oil Painting",
@@ -365,8 +365,8 @@ NAMES = {
     "sketch": "Sketch",
     "cubism": "Cubism"
 }
-# Same as NAMES but with line breaks so they fit under the bars
-BAR_NAMES = {
+# Same as names but with line breaks so they fit under the bars
+bar_names = {
     "baseline": "Baseline",
     "alpha0": "Control\n(α = 0)",
     "oil_painting": "Oil\nPainting",
@@ -376,7 +376,7 @@ BAR_NAMES = {
     "sketch": "Sketch",
     "cubism": "Cubism"
 }
-PAINTING_FILES = {
+painting_files = {
     "cubism": "cubism.jpg",
     "cubism_b": "cubism_b.jpg",
     "cubism_c": "cubism_c.jpg",
@@ -386,30 +386,30 @@ PAINTING_FILES = {
 }
 
 # Colors
-COLORS = {"resnet": "#2a78d6", "vit": "#eb6834"}
-INK = "#1a1a19"
-MUTED = "#6b6a65"
-GRID = "#e4e3df"
-ACCURACY_CMAP = matplotlib.colormaps["viridis_r"]
-CONFUSION_CMAP = LinearSegmentedColormap.from_list("conf", ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"])
-RHO_CMAP = LinearSegmentedColormap.from_list("rho", ["#1c5cab", "#ffffff", "#b8322f"])   # white at 1x
-RHO_NORM = LogNorm(vmin=0.25, vmax=4)
+colors = {"resnet": "#2a78d6", "vit": "#eb6834"}
+ink = "#1a1a19"
+muted = "#6b6a65"
+grid_color = "#e4e3df"
+accuracy_cmap = matplotlib.colormaps["viridis_r"]
+confusion_cmap = LinearSegmentedColormap.from_list("conf", ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"])
+rho_cmap = LinearSegmentedColormap.from_list("rho", ["#1c5cab", "#ffffff", "#b8322f"])   # white at 1x
+rho_norm = LogNorm(vmin=0.25, vmax=4)
 
-PAGE_WIDTH = 6.5   # inches
+page_width = 6.5   # inches
 
 # Font size and colors for every figure
 plt.rcParams["font.size"] = 7.5
 plt.rcParams["axes.titlesize"] = 8.5
-plt.rcParams["axes.edgecolor"] = MUTED
-plt.rcParams["axes.labelcolor"] = INK
-plt.rcParams["xtick.color"] = INK
-plt.rcParams["ytick.color"] = INK
+plt.rcParams["axes.edgecolor"] = muted
+plt.rcParams["axes.labelcolor"] = ink
+plt.rcParams["xtick.color"] = ink
+plt.rcParams["ytick.color"] = ink
 plt.rcParams["axes.spines.top"] = False
 plt.rcParams["axes.spines.right"] = False
 
 
 def save(fig, name):
-    path = f"{FIGURES_DIR}/{name}"
+    path = f"{figures_dir}/{name}"
     fig.savefig(path, dpi=300, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print(f"wrote {path}")
@@ -432,7 +432,7 @@ def stylized_image(condition, index, dataset):
     if condition == "baseline":
         return dataset[index][0]
     class_name = dataset.classes[dataset[index][1]]
-    path = f"{DATASETS[condition]}/{class_name}/{index}.png"
+    path = f"{dataset_folders[condition]}/{class_name}/{index}.png"
     if os.path.exists(path):
         return Image.open(path)
     return None
@@ -440,9 +440,9 @@ def stylized_image(condition, index, dataset):
 
 # Legend with both model colors and the white dots for the other paintings
 def model_legend(ax, **position):
-    resnet_patch = Rectangle((0, 0), 1, 1, color=COLORS["resnet"])
-    vit_patch = Rectangle((0, 0), 1, 1, color=COLORS["vit"])
-    dot = Line2D([], [], marker="o", linestyle="", markersize=4, markerfacecolor="white", markeredgecolor=INK)
+    resnet_patch = Rectangle((0, 0), 1, 1, color=colors["resnet"])
+    vit_patch = Rectangle((0, 0), 1, 1, color=colors["vit"])
+    dot = Line2D([], [], marker="o", linestyle="", markersize=4, markerfacecolor="white", markeredgecolor=ink)
     ax.legend([resnet_patch, vit_patch, dot],
               ["ResNet-50", "ViT-B/16", "Other reference paintings"],
               frameon=False,
@@ -459,38 +459,38 @@ def fig1_examples():
     )
 
     top_height = 0.8 * len(examples) + 0.35
-    fig = plt.figure(figsize=(PAGE_WIDTH, top_height + 2.9))
+    fig = plt.figure(figsize=(page_width, top_height + 2.9))
     top, bottom = fig.subfigures(2, 1, height_ratios=[top_height, 2.9])
 
     # Top: examples under every condition
-    axes = top.subplots(len(examples), len(ORDER), squeeze=False)
+    axes = top.subplots(len(examples), len(order), squeeze=False)
     top.subplots_adjust(left=0.04, right=1, top=0.82, bottom=0.02, wspace=0.08, hspace=0.08)
     for row, index in enumerate(examples):
-        for col, condition in enumerate(ORDER):
+        for col, condition in enumerate(order):
             ax = axes[row, col]
             image = stylized_image(condition, index, dataset)
             if image is not None:
                 ax.imshow(image, interpolation="nearest")
             hide_axes(ax)
             if row == 0:
-                ax.set_title(BAR_NAMES[condition], fontsize=6.5)
+                ax.set_title(bar_names[condition], fontsize=6.5)
         class_name = dataset.classes[dataset[index][1]]
         axes[row, 0].set_ylabel(class_name.capitalize(), fontsize=7)
 
     # Bottom: each painting and the first example stylized with it
     axes = bottom.subplots(2, 6)
     bottom.subplots_adjust(left=0.04, right=1, top=0.9, bottom=0.02, wspace=0.12, hspace=0.35)
-    for row, style in enumerate(PAINTINGS):
-        for slot, painting in enumerate(PAINTINGS[style]):
+    for row, style in enumerate(paintings):
+        for slot, painting in enumerate(paintings[style]):
             painting_ax = axes[row, 2 * slot]
             output_ax = axes[row, 2 * slot + 1]
 
-            painting_image = Image.open(f"project/Style_Transfer/styles/{PAINTING_FILES[painting]}").convert("RGB")
+            painting_image = Image.open(f"project/Style_Transfer/styles/{painting_files[painting]}").convert("RGB")
             painting_ax.imshow(painting_image)
-            painting_ax.set_title(PAINTING_NAMES[painting], fontsize=6.5)
+            painting_ax.set_title(painting_names[painting], fontsize=6.5)
 
             output_ax.imshow(stylized_image(painting, examples[0], dataset), interpolation="nearest")
-            output_ax.set_title("output", fontsize=6.5, color=MUTED)
+            output_ax.set_title("output", fontsize=6.5, color=muted)
 
             hide_axes(painting_ax)
             hide_axes(output_ax)
@@ -498,99 +498,99 @@ def fig1_examples():
 
 
 def fig2_accuracy():
-    x = np.arange(len(ORDER))
+    x = np.arange(len(order))
     width = 0.38
-    fig, ax = plt.subplots(figsize=(PAGE_WIDTH, 3.0))
+    fig, ax = plt.subplots(figsize=(page_width, 3.0))
 
-    for offset, model in zip([-width / 2, width / 2], MODELS):
-        bars = ax.bar(x + offset, ACCURACY[model], width - 0.03, color=COLORS[model], label=MODELS[model], zorder=2)
+    for offset, model in zip([-width / 2, width / 2], models):
+        bars = ax.bar(x + offset, overall_accuracy[model], width - 0.03, color=colors[model], label=models[model], zorder=2)
         bars[1].set_hatch("////")
         bars[1].set_edgecolor("white")
 
         for i in range(len(bars)):
-            value = ACCURACY[model][i]
+            value = overall_accuracy[model][i]
             center = bars[i].get_x() + bars[i].get_width() / 2
             if i == 1:
                 # Label goes above the hatched control bar
                 ax.text(center, value + 1, f"{value:.1f}", ha="center", va="bottom",
-                        fontsize=5.8, color=INK, fontweight="bold")
+                        fontsize=5.8, color=ink, fontweight="bold")
             else:
                 ax.text(center, value - 1.5, f"{value:.1f}", ha="center", va="top",
                         fontsize=5.8, color="white", fontweight="bold")
 
         # Other paintings
-        for style in EXTRA_PAINTING_ACCURACY[model]:
-            dots_x = x[ORDER.index(style)] + offset + np.array([-0.06, 0.06])
-            ax.scatter(dots_x, EXTRA_PAINTING_ACCURACY[model][style],
-                       s=16, color="white", edgecolor=INK, linewidth=0.9, zorder=3)
+        for style in extra_painting_accuracy[model]:
+            dots_x = x[order.index(style)] + offset + np.array([-0.06, 0.06])
+            ax.scatter(dots_x, extra_painting_accuracy[model][style],
+                       s=16, color="white", edgecolor=ink, linewidth=0.9, zorder=3)
 
     labels = []
-    for condition in ORDER:
-        labels.append(BAR_NAMES[condition])
+    for condition in order:
+        labels.append(bar_names[condition])
     ax.set_xticks(x, labels, fontsize=7)
     ax.set_ylabel("Overall accuracy (%)")
     ax.set_ylim(0, 105)
-    ax.yaxis.grid(True, color=GRID, linewidth=0.8, zorder=0)
+    ax.yaxis.grid(True, color=grid_color, linewidth=0.8, zorder=0)
     model_legend(ax, loc="upper center", ncols=3, bbox_to_anchor=(0.5, 1.12))
     save(fig, "fig2_accuracy.png")
 
 
 def fig3_effects():
-    groups = ["pipeline"] + ORDER[2:]
+    groups = ["pipeline"] + order[2:]
     x = np.arange(len(groups))
     width = 0.38
-    fig, ax = plt.subplots(figsize=(PAGE_WIDTH, 2.9))
+    fig, ax = plt.subplots(figsize=(page_width, 2.9))
 
-    for offset, model in zip([-width / 2, width / 2], MODELS):
-        bars = ax.bar(x + offset, EFFECTS[model], width - 0.03, color=COLORS[model], zorder=2)
+    for offset, model in zip([-width / 2, width / 2], models):
+        bars = ax.bar(x + offset, effects[model], width - 0.03, color=colors[model], zorder=2)
         bars[0].set_hatch("////")
         bars[0].set_edgecolor("white")
         for i in range(len(bars)):
-            value = EFFECTS[model][i]
+            value = effects[model][i]
             center = bars[i].get_x() + bars[i].get_width() / 2
             ax.text(center, value + 0.5, f"{value:.1f}", ha="center", va="bottom", fontsize=6)
 
         # Other paintings
-        for style in EXTRA_PAINTING_EFFECTS[model]:
+        for style in extra_painting_effects[model]:
             dots_x = x[groups.index(style)] + offset + np.array([-0.06, 0.06])
-            ax.scatter(dots_x, EXTRA_PAINTING_EFFECTS[model][style],
-                       s=16, color="white", edgecolor=INK, linewidth=0.9, zorder=3)
+            ax.scatter(dots_x, extra_painting_effects[model][style],
+                       s=16, color="white", edgecolor=ink, linewidth=0.9, zorder=3)
 
     # Dashed line between the pipeline bars and the style bars
-    ax.axvline(0.5, color=MUTED, linewidth=0.8, linestyle=(0, (3, 3)))
+    ax.axvline(0.5, color=muted, linewidth=0.8, linestyle=(0, (3, 3)))
 
     labels = ["Pipeline\n(baseline →\ncontrol)"]
-    for condition in ORDER[2:]:
-        labels.append(BAR_NAMES[condition])
+    for condition in order[2:]:
+        labels.append(bar_names[condition])
     ax.set_xticks(x, labels, fontsize=7)
 
     ax.set_ylabel("Accuracy lost (points)")
     ax.set_ylim(0, 35)
-    ax.text(3.5, 35 * 1.02, "Style effect (control → style)", ha="center", fontsize=7, color=MUTED)
-    ax.yaxis.grid(True, color=GRID, linewidth=0.8, zorder=0)
+    ax.text(3.5, 35 * 1.02, "Style effect (control → style)", ha="center", fontsize=7, color=muted)
+    ax.yaxis.grid(True, color=grid_color, linewidth=0.8, zorder=0)
     model_legend(ax, loc="upper left", bbox_to_anchor=(0.17, 1))
     save(fig, "fig3_effects.png")
 
 
 def fig4_per_class():
-    fig, axes = plt.subplots(1, 2, figsize=(PAGE_WIDTH, 3.3), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(page_width, 3.3), sharey=True)
 
-    for ax, model in zip(axes, MODELS):
-        grid = np.array(PER_CLASS_ACCURACY[model])
-        image = ax.imshow(grid, cmap=ACCURACY_CMAP, vmin=0, vmax=100, aspect="auto")
+    for ax, model in zip(axes, models):
+        grid = np.array(per_class_accuracy[model])
+        image = ax.imshow(grid, cmap=accuracy_cmap, vmin=0, vmax=100, aspect="auto")
         for row in range(10):
-            for col in range(len(ORDER)):
+            for col in range(len(order)):
                 value = grid[row, col]
                 if value >= 55:
                     color = "white"
                 else:
-                    color = INK
+                    color = ink
                 ax.text(col, row, f"{value:.1f}", ha="center", va="center", fontsize=5.2, color=color)
 
-        ax.set_title(MODELS[model])
-        ax.set_xticks(range(len(ORDER)), [NAMES[c] for c in ORDER],
+        ax.set_title(models[model])
+        ax.set_xticks(range(len(order)), [names[c] for c in order],
                       rotation=40, ha="right", rotation_mode="anchor", fontsize=6.5)
-        ax.set_yticks(range(10), [c.capitalize() for c in CLASSES], fontsize=6.5)
+        ax.set_yticks(range(10), [c.capitalize() for c in classes], fontsize=6.5)
         hide_frame(ax)
 
     colorbar = fig.colorbar(image, ax=list(axes), shrink=0.85, pad=0.02, aspect=25)
@@ -602,12 +602,12 @@ def fig4_per_class():
 # Fig. 5 and Fig. 7, ResNet on top and ViT below
 def rho_heatmap(values, rows, labels, name):
     panel_height = 0.24 * len(rows) + 0.35
-    fig, axes = plt.subplots(2, 1, figsize=(PAGE_WIDTH, 2 * panel_height + 0.6), sharex=True,
+    fig, axes = plt.subplots(2, 1, figsize=(page_width, 2 * panel_height + 0.6), sharex=True,
                              gridspec_kw={"hspace": 0.28})
 
-    for ax, model in zip(axes, MODELS):
+    for ax, model in zip(axes, models):
         grid = np.array(values[model])
-        image = ax.imshow(np.clip(grid, 0.25, 4), cmap=RHO_CMAP, norm=RHO_NORM, aspect="auto")
+        image = ax.imshow(np.clip(grid, 0.25, 4), cmap=rho_cmap, norm=rho_norm, aspect="auto")
 
         for row in range(len(rows)):
             found = attractors(model, rows[row])
@@ -618,19 +618,19 @@ def rho_heatmap(values, rows, labels, name):
                 if value >= 2.6 or value <= 0.38:
                     color = "white"
                 else:
-                    color = INK
+                    color = ink
 
                 if found[col]:
                     ax.text(col, row, f"{value:.2f}", ha="center", va="center", fontsize=6.3,
                             fontweight="bold", color=color)
                     ax.add_patch(Rectangle((col - 0.45, row - 0.42), 0.9, 0.84,
-                                           fill=False, edgecolor=INK, linewidth=1.1))
+                                           fill=False, edgecolor=ink, linewidth=1.1))
                 else:
                     ax.text(col, row, f"{value:.2f}", ha="center", va="center", fontsize=6.3,
                             fontweight="normal", color=color)
 
-        ax.set_title(MODELS[model], loc="left")
-        ax.set_xticks(range(10), [c.capitalize() for c in CLASSES],
+        ax.set_title(models[model], loc="left")
+        ax.set_xticks(range(10), [c.capitalize() for c in classes],
                       fontsize=6.8, rotation=25, ha="right", rotation_mode="anchor")
         ax.set_yticks(range(len(rows)), labels, fontsize=6.8)
         hide_frame(ax)
@@ -644,18 +644,18 @@ def rho_heatmap(values, rows, labels, name):
 
 
 def fig6_confusion_cubism():
-    fig, axes = plt.subplots(1, 2, figsize=(PAGE_WIDTH, 3.2), sharey=True)
+    fig, axes = plt.subplots(1, 2, figsize=(page_width, 3.2), sharey=True)
 
-    for ax, model in zip(axes, MODELS):
-        grid = np.array(CUBISM_CONFUSION[model])
-        image = ax.imshow(grid, cmap=CONFUSION_CMAP, vmin=0, vmax=100, aspect="equal")
+    for ax, model in zip(axes, models):
+        grid = np.array(cubism_confusion[model])
+        image = ax.imshow(grid, cmap=confusion_cmap, vmin=0, vmax=100, aspect="equal")
         for row in range(10):
             for col in range(10):
                 value = grid[row, col]
                 if value >= 55:
                     color = "white"
                 else:
-                    color = INK
+                    color = ink
                 if row == col:
                     weight = "bold"
                 else:
@@ -664,18 +664,18 @@ def fig6_confusion_cubism():
                         fontweight=weight, color=color)
 
             # Box around the correct predictions
-            ax.add_patch(Rectangle((row - 0.5, row - 0.5), 1, 1, fill=False, edgecolor=INK, linewidth=0.8))
+            ax.add_patch(Rectangle((row - 0.5, row - 0.5), 1, 1, fill=False, edgecolor=ink, linewidth=0.8))
 
         # Red boxes on the confusions in the text
-        for true, predicted in HIGHLIGHTED_ERRORS:
-            corner = (CLASSES.index(predicted) - 0.46, CLASSES.index(true) - 0.46)
+        for true, predicted in highlighted_errors:
+            corner = (classes.index(predicted) - 0.46, classes.index(true) - 0.46)
             ax.add_patch(Rectangle(corner, 0.92, 0.92, fill=False, edgecolor="#b8322f", linewidth=1.5))
 
-        cubism_accuracy = ACCURACY[model][ORDER.index("cubism")]
-        ax.set_title(f"{MODELS[model]}, cubism ({cubism_accuracy:.2f}%)")
-        ax.set_xticks(range(10), [c.capitalize() for c in CLASSES],
+        cubism_accuracy = overall_accuracy[model][order.index("cubism")]
+        ax.set_title(f"{models[model]}, cubism ({cubism_accuracy:.2f}%)")
+        ax.set_xticks(range(10), [c.capitalize() for c in classes],
                       rotation=40, ha="right", rotation_mode="anchor", fontsize=6.2)
-        ax.set_yticks(range(10), [c.capitalize() for c in CLASSES], fontsize=6.2)
+        ax.set_yticks(range(10), [c.capitalize() for c in classes], fontsize=6.2)
         ax.set_xlabel("Predicted class", fontsize=7)
         hide_frame(ax)
     axes[0].set_ylabel("True class", fontsize=7)
@@ -692,15 +692,15 @@ make_tables()
 print_discussion_numbers()
 
 # Part 2
-os.makedirs(FIGURES_DIR, exist_ok=True)
+os.makedirs(figures_dir, exist_ok=True)
 fig1_examples()
 fig2_accuracy()
 fig3_effects()
 fig4_per_class()
-rho_heatmap(RHO, ORDER, [NAMES[c] for c in ORDER], "fig5_attractors.png")
+rho_heatmap(rho_table, order, [names[c] for c in order], "fig5_attractors.png")
 fig6_confusion_cubism()
 
-labels = [NAMES["alpha0"]]
-for painting in PAINTING_ROWS[1:]:
-    labels.append(PAINTING_NAMES[painting])
-rho_heatmap(PAINTING_RHO, PAINTING_ROWS, labels, "fig7_paintings_rho.png")
+labels = [names["alpha0"]]
+for painting in painting_rows[1:]:
+    labels.append(painting_names[painting])
+rho_heatmap(painting_rho, painting_rows, labels, "fig7_paintings_rho.png")
