@@ -1,6 +1,6 @@
 # ViT-CNN-Across-AdaIN
 
-From the paper: "[From Photographs To Paintings: A Staged Control Protocol for Style-Transfer Robustness in CNNs and ViTs]([https://docs.google.com/document/d/1urfUzEl5edLnPozjKuZe3V-idPTEaBKDhAzeu2JSVP8/edit?tab=t.0])"
+From the paper: "[[From Photographs To Paintings: A Staged Control Protocol for Style-Transfer Robustness in CNNs and ViTs]]([url](https://docs.google.com/document/d/1urfUzEl5edLnPozjKuZe3V-idPTEaBKDhAzeu2JSVP8/edit?tab=t.0))"
 
 Compares how a CNN (fine-tuned **ResNet-50**) and a Vision Transformer (**ViT-Base-16**) hold up when the same images are shown in different artistic styles.
 
