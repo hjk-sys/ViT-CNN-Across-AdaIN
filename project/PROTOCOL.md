@@ -45,6 +45,7 @@ Outputs, in `project/results/`:
 - Model weights aren't in the repo (too large for GitHub). Put them in `project/models/`:
   - `finetune_resnet_cifar_model.pt` from https://huggingface.co/AnjanSB/finetune-resnet-cifar10
   - `vit_base_16_cifar10_original.pth` from https://huggingface.co/Yurim0507/vit-base-16-cifar10-unlearning
+  - ViT-Small downloads automatically from https://huggingface.co/MF21377197/vit-small-patch16-224-finetuned-Cifar10
 - The AdaIN decoder weights are included in `project/Style_Transfer/weights/`.
 
 ## Adding a model
