@@ -1,6 +1,6 @@
 # Control-corrected evaluation protocol
 
-Style-transfer robustness tests usually compare stylized images to the original photos. But AdaIN changes images even when no style is applied: it resizes them and rebuilds them through an encoder and decoder. If you compare against the original photos, that damage gets counted as an effect of style.
+Style-transfer robustness tests usually compare stylized images to the original photos. But AdaIN changes images even when no style is applied: it resizes them and rebuilds them through an encoder and decoder. If you compare against the original photos, that damage gets counted as an effect of style. This protocol runs through 13 conditions that is intended in future robustness tests. 
 
 This protocol runs a model through four conditions on the CIFAR-10 test set, so each step's effect can be measured on its own:
 
