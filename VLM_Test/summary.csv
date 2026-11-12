@@ -1,0 +1,8 @@
+style,clip_acc,recall_true_object,hallucination_rate
+resize_only-Batch,0.79,0.87,0.04
+abstract-Batch,0.56,0.68,0.09
+cubism-Batch,0.46,0.60,0.06
+oil_painting-Batch,0.57,0.67,0.08
+Post_Impression-Batch,0.56,0.77,0.06
+sketch-Batch,0.55,0.69,0.11
+watercolor-Batch,0.49,0.64,0.08

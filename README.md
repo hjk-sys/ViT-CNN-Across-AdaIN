@@ -95,3 +95,7 @@ project/
 - ViT-small-patch16 CIFAR-10 checkpoint: https://huggingface.co/MF21377197/vit-small-patch16-224-finetuned-Cifar10. (MIT License)
 - Style transfer: AdaIN (Huang and Belongie, 2017)
 - Dataset: CIFAR-10 (Krizhevsky, 2009)
+
+## VLM_Test
+
+A separate pilot that runs CLIP and LLaVA on the stylized images to check for accuracy loss and object hallucination. See [VLM_Test/README.md](VLM_Test/README.md).
